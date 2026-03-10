@@ -52,7 +52,7 @@ public class PasswordResetEmailTemplate {
                                             We received a request to reset the password for your Banka 2 account.
                                         </p>
                                         <p style="margin:0 0 20px 0;font-size:14px;color:#4b5563;">
-                                            Click the button below to set a new password. For security reasons, this link will expire after a short period of time.
+                                            Click the button below to open the page where you can set a new password. The link expires in 30 minutes and can only be used once.
                                         </p>
                                         <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 24px 0;width:100%%;text-align:center;">
                                             <tr>
@@ -77,8 +77,8 @@ public class PasswordResetEmailTemplate {
                                 </tr>
                                 <tr>
                                     <td style="padding:16px 24px;border-top:1px solid #e5e7eb;background-color:#f9fafb;">
-                                        <p style="margin:0;font-size:11px;color:#9ca3af;">
-                                            This is an automated message from Banka 2. Please do not reply to this email.
+                                        <p style="margin:0;font-size:11px;color:#9ca3af;text-align:center;">
+                                            This is an automated message from Banka 2. The reset link above opens the page to set a new password (confirm flow). Please do not reply to this email.
                                         </p>
                                     </td>
                                 </tr>
