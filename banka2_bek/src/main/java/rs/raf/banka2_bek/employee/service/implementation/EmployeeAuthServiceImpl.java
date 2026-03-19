@@ -11,7 +11,6 @@ import rs.raf.banka2_bek.employee.model.Employee;
 import rs.raf.banka2_bek.employee.repository.ActivationTokenRepository;
 import rs.raf.banka2_bek.employee.repository.EmployeeRepository;
 import rs.raf.banka2_bek.employee.service.EmployeeAuthService;
-import rs.raf.banka2_bek.notification.service.MailNotificationService;
 
 import java.time.LocalDateTime;
 

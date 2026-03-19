@@ -42,13 +42,15 @@ public class GlobalSecurityConfig  {
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/v3/api-docs",
-                                "/temp/{option}"
                                 "/exchange-rates",
                                 "/exchange/calculate"
-
                         ).permitAll()
                         .requestMatchers("/employees/**").hasRole("ADMIN")
-                        .requestMatchers("/payment-recipients/**").hasRole("CLIENT")
+                        .requestMatchers("/clients/**").hasRole("ADMIN")
+                        .requestMatchers("/accounts/all/**").hasRole("ADMIN")
+                        .requestMatchers("/accounts/client/**").hasRole("ADMIN")
+                        .requestMatchers("/cards/*/unblock").hasRole("ADMIN")
+                        .requestMatchers("/cards/*/deactivate").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .formLogin(AbstractHttpConfigurer::disable)

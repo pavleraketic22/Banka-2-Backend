@@ -21,11 +21,6 @@ public class TransactionController {
 
     private final TransactionService transactionService;
 
-//    @PostMapping
-//    public ResponseEntity<TransactionResponseDto> createTransaction(@Valid @RequestBody CreateTransactionRequestDto request) {
-//        return ResponseEntity.status(HttpStatus.CREATED).body(transactionService.createTransaction(request));
-//    }
-
     @GetMapping
     public ResponseEntity<Page<TransactionListItemDto>> getTransactions(
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable

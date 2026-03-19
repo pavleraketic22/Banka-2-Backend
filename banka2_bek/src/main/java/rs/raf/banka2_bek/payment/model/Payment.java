@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import rs.raf.banka2_bek.account.model.Account;
-import rs.raf.banka2_bek.auth.model.User;
 import rs.raf.banka2_bek.client.model.Client;
 import rs.raf.banka2_bek.currency.model.Currency;
 

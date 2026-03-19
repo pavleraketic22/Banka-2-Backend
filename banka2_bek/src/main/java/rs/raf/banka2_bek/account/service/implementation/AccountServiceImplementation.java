@@ -1,32 +1,168 @@
 package rs.raf.banka2_bek.account.service.implementation;
 
 import rs.raf.banka2_bek.account.dto.AccountResponseDto;
+import rs.raf.banka2_bek.account.dto.CreateAccountDto;
 import rs.raf.banka2_bek.account.model.Account;
 import rs.raf.banka2_bek.account.model.AccountStatus;
+import rs.raf.banka2_bek.account.model.AccountType;
 import rs.raf.banka2_bek.account.repository.AccountRepository;
 import rs.raf.banka2_bek.account.service.AccountService;
+import rs.raf.banka2_bek.account.util.AccountNumberUtils;
+import rs.raf.banka2_bek.card.service.CardService;
 import rs.raf.banka2_bek.client.model.Client;
 import rs.raf.banka2_bek.client.repository.ClientRepository;
 import rs.raf.banka2_bek.company.model.Company;
+import rs.raf.banka2_bek.company.model.AuthorizedPerson;
+import rs.raf.banka2_bek.company.repository.CompanyRepository;
 import rs.raf.banka2_bek.company.dto.CompanyDto;
+import rs.raf.banka2_bek.currency.model.Currency;
+import rs.raf.banka2_bek.currency.repository.CurrencyRepository;
+import rs.raf.banka2_bek.employee.model.Employee;
+import rs.raf.banka2_bek.employee.repository.EmployeeRepository;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
 public class AccountServiceImplementation implements AccountService {
 
     private final AccountRepository accountRepository;
-    private final ClientRepository clientRepository; //made client repo - nije ga bilo
+    private final ClientRepository clientRepository;
+    private final CurrencyRepository currencyRepository;
+    private final CompanyRepository companyRepository;
+    private final EmployeeRepository employeeRepository;
+    private final CardService cardService;
+
+    public AccountServiceImplementation(AccountRepository accountRepository,
+                                         ClientRepository clientRepository,
+                                         CurrencyRepository currencyRepository,
+                                         CompanyRepository companyRepository,
+                                         EmployeeRepository employeeRepository,
+                                         @Lazy CardService cardService) {
+        this.accountRepository = accountRepository;
+        this.clientRepository = clientRepository;
+        this.currencyRepository = currencyRepository;
+        this.companyRepository = companyRepository;
+        this.employeeRepository = employeeRepository;
+        this.cardService = cardService;
+    }
+
+    @Override
+    @Transactional
+    public AccountResponseDto createAccount(CreateAccountDto request) {
+        // Find currency
+        Currency currency = currencyRepository.findByCode(request.getCurrencyCode())
+                .orElseThrow(() -> new RuntimeException("Valuta '" + request.getCurrencyCode() + "' nije pronadjena"));
+
+        // Find employee from security context
+        String email = getAuthenticatedEmail();
+        Employee employee = employeeRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Zaposleni nije pronadjen"));
+
+        // Resolve owner
+        Client client = null;
+        Company company = null;
+        boolean isBusiness = request.getCompany() != null;
+
+        if (request.getClientId() != null) {
+            client = clientRepository.findById(request.getClientId())
+                    .orElseThrow(() -> new RuntimeException("Klijent sa ID " + request.getClientId() + " nije pronadjen"));
+        }
+
+        if (isBusiness) {
+            company = Company.builder()
+                    .name(request.getCompany().getName())
+                    .registrationNumber(request.getCompany().getRegistrationNumber())
+                    .taxNumber(request.getCompany().getTaxNumber())
+                    .activityCode(request.getCompany().getActivityCode())
+                    .address(request.getCompany().getAddress())
+                    .authorizedPersons(new ArrayList<>())
+                    .build();
+
+            if (client != null) {
+                AuthorizedPerson ap = AuthorizedPerson.builder()
+                        .client(client)
+                        .company(company)
+                        .build();
+                company.getAuthorizedPersons().add(ap);
+            }
+
+            company = companyRepository.save(company);
+        }
+
+        if (!isBusiness && client == null) {
+            throw new RuntimeException("Licni racun mora imati klijenta");
+        }
+
+        // Generate account number
+        String accountNumber;
+        do {
+            accountNumber = AccountNumberUtils.generate(
+                    request.getAccountType(),
+                    request.getAccountSubtype(),
+                    isBusiness);
+        } while (accountRepository.existsByAccountNumber(accountNumber));
+
+        BigDecimal dailyLimit = request.getDailyLimit() != null ? request.getDailyLimit() : BigDecimal.valueOf(250000);
+        BigDecimal monthlyLimit = request.getMonthlyLimit() != null ? request.getMonthlyLimit() : BigDecimal.valueOf(1000000);
+
+        Account account = Account.builder()
+                .accountNumber(accountNumber)
+                .accountType(request.getAccountType())
+                .accountSubtype(request.getAccountSubtype())
+                .currency(currency)
+                .client(isBusiness ? null : client)
+                .company(company)
+                .employee(employee)
+                .balance(request.getInitialBalance())
+                .availableBalance(request.getInitialBalance())
+                .dailyLimit(dailyLimit)
+                .monthlyLimit(monthlyLimit)
+                .maintenanceFee(request.getAccountType() == AccountType.FOREIGN ? BigDecimal.ZERO : BigDecimal.valueOf(255))
+                .status(AccountStatus.ACTIVE)
+                .expirationDate(LocalDate.now().plusYears(5))
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        account = accountRepository.save(account);
+
+        // Auto-create card if requested
+        if (Boolean.TRUE.equals(request.getCreateCard()) && client != null) {
+            cardService.createCardForAccount(account.getId(), client.getId(), null);
+        }
+
+        return toResponse(account);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<AccountResponseDto> getAllAccounts(int page, int limit, String ownerName) {
+        PageRequest pageRequest = PageRequest.of(page, limit, Sort.by("id").ascending());
+        return accountRepository.findAllWithOwnerFilter(ownerName, pageRequest)
+                .map(this::toResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AccountResponseDto> getAccountsByClient(Long clientId) {
+        return accountRepository.findByClientId(clientId).stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
 
     private Account checkAuth(Long accountId) throws IllegalStateException {
         Account account = accountRepository.findById(accountId)
@@ -183,27 +319,22 @@ public class AccountServiceImplementation implements AccountService {
 
 
 
-    // helper za autentifikaciju klijenta
-    private Client getAuthenticatedClient() {
+    private String getAuthenticatedEmail() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-
         if (auth == null || !auth.isAuthenticated()) {
             throw new IllegalStateException("User is not authenticated.");
         }
-
-        String email;
         Object principal = auth.getPrincipal();
-
         if (principal instanceof UserDetails userDetails) {
-            email = userDetails.getUsername();
+            return userDetails.getUsername();
         } else if (principal instanceof String s) {
-            email = s;
-        } else {
-            throw new IllegalStateException(
-                    "Unable to determine user email from security context."
-            );
+            return s;
         }
+        throw new IllegalStateException("Unable to determine user email from security context.");
+    }
 
+    private Client getAuthenticatedClient() {
+        String email = getAuthenticatedEmail();
         return clientRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Client with email " + email + " not found."

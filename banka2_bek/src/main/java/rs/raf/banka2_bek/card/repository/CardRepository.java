@@ -1,0 +1,14 @@
+package rs.raf.banka2_bek.card.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import rs.raf.banka2_bek.card.model.Card;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface CardRepository extends JpaRepository<Card, Long> {
+    List<Card> findByClientId(Long clientId);
+    List<Card> findByAccountId(Long accountId);
+    Optional<Card> findByCardNumber(String cardNumber);
+    long countByAccountIdAndStatusNot(Long accountId, rs.raf.banka2_bek.card.model.CardStatus status);
+}

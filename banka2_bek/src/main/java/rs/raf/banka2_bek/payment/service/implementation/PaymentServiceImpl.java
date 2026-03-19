@@ -50,8 +50,6 @@ public class PaymentServiceImpl implements PaymentService {
     private final ExchangeService exchangeService;
     private static final int ORDER_NUMBER_MAX_RETRIES = 5;
 
-    //Trenutno podrzava samo placanja u okviru iste banke
-    //TODO: srediti exceptione
     @Override
     @Transactional
     public PaymentResponseDto createPayment(CreatePaymentRequestDto request) {

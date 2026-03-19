@@ -12,7 +12,7 @@ import rs.raf.banka2_bek.transfer.model.TransferType;
 import rs.raf.banka2_bek.transfers.dto.TransferFxRequestDto;
 import rs.raf.banka2_bek.transfers.dto.TransferInternalRequestDto;
 import rs.raf.banka2_bek.transfers.dto.TransferResponseDto;
-import rs.raf.banka2_bek.transfers.repository.AccountRepository;
+import rs.raf.banka2_bek.account.repository.AccountRepository;
 import rs.raf.banka2_bek.transfers.repository.TransferRepository;
 import rs.raf.banka2_bek.exchange.ExchangeService;
 import java.math.BigDecimal;

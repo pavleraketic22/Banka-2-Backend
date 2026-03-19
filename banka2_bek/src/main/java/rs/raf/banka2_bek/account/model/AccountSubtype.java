@@ -5,6 +5,8 @@ public enum AccountSubtype {
     SAVINGS,      // Štedni
     PENSION,      // Penzionerski
     YOUTH,        // Za mlade
+    STUDENT,      // Za studente
+    UNEMPLOYED,   // Za nezaposlene
     SALARY,       // Za isplatu plata
     STANDARD      // Standardni
 }

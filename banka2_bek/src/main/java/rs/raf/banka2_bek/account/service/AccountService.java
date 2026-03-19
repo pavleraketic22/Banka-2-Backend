@@ -1,11 +1,16 @@
 package rs.raf.banka2_bek.account.service;
 
+import org.springframework.data.domain.Page;
 import rs.raf.banka2_bek.account.dto.AccountResponseDto;
+import rs.raf.banka2_bek.account.dto.CreateAccountDto;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 public interface AccountService {
+
+    AccountResponseDto createAccount(CreateAccountDto request);
+
     /**
      * Returns a list of active accounts for the currently authenticated client,
      * sorted by available balance in descending order.
@@ -45,4 +50,8 @@ public interface AccountService {
      */
 
     AccountResponseDto updateAccountLimits(Long accountId, BigDecimal dailyLimit, BigDecimal monthlyLimit);
+
+    Page<AccountResponseDto> getAllAccounts(int page, int limit, String ownerName);
+
+    List<AccountResponseDto> getAccountsByClient(Long clientId);
 }

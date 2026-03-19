@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import rs.raf.banka2_bek.client.model.Client;
-import rs.raf.banka2_bek.company.model.Company;
 
 import java.time.LocalDateTime;
 

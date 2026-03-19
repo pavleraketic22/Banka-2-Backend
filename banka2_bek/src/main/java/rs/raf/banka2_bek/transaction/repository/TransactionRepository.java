@@ -5,8 +5,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import rs.raf.banka2_bek.payment.model.PaymentStatus;
-import rs.raf.banka2_bek.transaction.dto.TransactionType;
 import rs.raf.banka2_bek.transaction.model.Transaction;
 
 import java.math.BigDecimal;

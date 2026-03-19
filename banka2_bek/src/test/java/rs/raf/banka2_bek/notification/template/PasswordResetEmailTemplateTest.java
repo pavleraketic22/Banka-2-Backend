@@ -2,7 +2,6 @@ package rs.raf.banka2_bek.notification.template;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import rs.raf.banka2_bek.notification.template.PasswordResetEmailTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

@@ -97,7 +97,8 @@ INSERT INTO currencies (id, code, name, symbol, country, description, active) VA
 (5, 'JPY', 'Japanese Yen', '¥', 'Japan', 'Japanese Yen – currency of Japan', true),
 (6, 'CAD', 'Canadian Dollar', '$', 'Canada', 'Canadian Dollar – currency of Canada', true),
 (7, 'AUD', 'Australian Dollar', '$', 'Australia', 'Australian Dollar – currency of Australia', true),
-(8, 'RSD', 'Serbian Dinar', 'RSD', 'Serbia', 'Serbian Dinar – currency of Serbia', true);
+(8, 'RSD', 'Serbian Dinar', 'RSD', 'Serbia', 'Serbian Dinar – currency of Serbia', true)
+ON DUPLICATE KEY UPDATE code = code;
 
 -- ============================================================
 -- EMPLOYEE PERMISSIONS
@@ -223,13 +224,24 @@ VALUES
      NULL, 1, NOW())
     ON DUPLICATE KEY UPDATE name = name;
 
+-- ============================================================
+-- AUTHORIZED PERSONS (ovlascena lica za firme)
+-- ============================================================
+-- Milica (client_id=2) je ovlasceno lice za TechStar DOO (company_id=1)
+INSERT INTO authorized_persons (client_id, company_id, created_at)
+SELECT c.id, 1, NOW()
+FROM clients c WHERE c.email = 'milica.nikolic@gmail.com'
+AND NOT EXISTS (
+    SELECT 1 FROM authorized_persons ap WHERE ap.client_id = c.id AND ap.company_id = 1
+);
+
 
 -- ============================================================
 -- ACCOUNTS (racuni klijenata)
 -- ============================================================
 -- Enum vrednosti:
 --   AccountType:    CHECKING, FOREIGN, BUSINESS, MARGIN
---   AccountSubtype: PERSONAL, SAVINGS, PENSION, YOUTH, SALARY, STANDARD
+--   AccountSubtype: PERSONAL, SAVINGS, PENSION, YOUTH, STUDENT, UNEMPLOYED, SALARY, STANDARD
 --   AccountStatus:  ACTIVE, INACTIVE
 --
 -- client_id:   1=Stefan, 2=Milica, 3=Lazar, 4=Ana
@@ -244,24 +256,18 @@ INSERT INTO accounts (account_number, account_type, account_subtype, currency_id
                       maintenance_fee, expiration_date, status, name, created_at)
 VALUES
     -- ─── Stefan Jovanović (client_id=1) — 3 aktivna racuna ─────────────────
-    -- GET /accounts/my → 3 racuna, sortirano po available_balance DESC:
-    --   Stednja(520000) > Glavni(178000) > Euro(2350)
-
-    -- Stefanov tekuci standardni (RSD)
     ('222000112345678911', 'CHECKING', 'STANDARD', 8, 1, NULL, 1,
      185000.0000, 178000.0000,
      250000.0000, 1000000.0000,
      7000.0000, 45000.0000,
      255.0000, '2030-01-01', 'ACTIVE', 'Glavni račun', NOW()),
 
-    -- Stefanov stedni (RSD)
     ('222000112345678912', 'CHECKING', 'SAVINGS', 8, 1, NULL, 1,
      520000.0000, 520000.0000,
      100000.0000, 500000.0000,
      0.0000, 0.0000,
      150.0000, '2030-06-01', 'ACTIVE', 'Štednja', NOW()),
 
-    -- Stefanov devizni (EUR)
     ('222000121345678921', 'FOREIGN', 'PERSONAL', 1, 1, NULL, 2,
      2500.0000, 2350.0000,
      5000.0000, 20000.0000,
@@ -269,53 +275,194 @@ VALUES
      0.0000, '2030-01-01', 'ACTIVE', 'Euro račun', NOW()),
 
     -- ─── Milica Nikolić (client_id=2) — 1 licni + 1 poslovni ──────────────
-    -- Poslovni racun: account_type=BUSINESS, company_id=1 (TechStar DOO)
-
-    -- Milicin tekuci (RSD)
     ('222000112345678913', 'CHECKING', 'STANDARD', 8, 2, NULL, 1,
      95000.0000, 92000.0000,
      250000.0000, 1000000.0000,
      3000.0000, 28000.0000,
      255.0000, '2031-03-15', 'ACTIVE', 'Lični račun', NOW()),
 
-    -- Milicin poslovni (RSD) — vezan za TechStar DOO
     ('222000112345678914', 'BUSINESS', 'STANDARD', 8, 2, 1, 2,
      1250000.0000, 1230000.0000,
      1000000.0000, 5000000.0000,
      20000.0000, 350000.0000,
      500.0000, '2032-01-01', 'ACTIVE', 'TechStar poslovanje', NOW()),
 
-    -- ─── Lazar Ilić (client_id=3) — 1 tekuci + 1 devizni USD ──────────────
+    -- Milicin devizni EUR
+    ('222000121345678923', 'FOREIGN', 'PERSONAL', 1, 2, NULL, 1,
+     3200.0000, 3200.0000,
+     10000.0000, 50000.0000,
+     0.0000, 0.0000,
+     0.0000, '2031-06-01', 'ACTIVE', 'Euro devizni', NOW()),
 
-    -- Lazarev tekuci (RSD)
+    -- ─── Lazar Ilić (client_id=3) — 1 tekuci + 1 devizni USD + 1 devizni EUR
     ('222000112345678915', 'CHECKING', 'STANDARD', 8, 3, NULL, 3,
      310000.0000, 305000.0000,
      250000.0000, 1000000.0000,
      5000.0000, 62000.0000,
      255.0000, '2030-09-01', 'ACTIVE', 'Tekući', NOW()),
 
-    -- Lazarev devizni (USD)
     ('222000121345678922', 'FOREIGN', 'PERSONAL', 3, 3, NULL, 3,
      1800.0000, 1800.0000,
      3000.0000, 15000.0000,
      0.0000, 0.0000,
      0.0000, '2031-01-01', 'ACTIVE', 'Dollar savings', NOW()),
 
-    -- ─── Ana Stojanović (client_id=4) — 1 aktivan + 1 neaktivan ───────────
-    -- GET /accounts/my → vraca SAMO 1 (ACTIVE), neaktivan se filtrira
+    ('222000121345678924', 'FOREIGN', 'PERSONAL', 1, 3, NULL, 3,
+     1500.0000, 1500.0000,
+     5000.0000, 20000.0000,
+     0.0000, 0.0000,
+     0.0000, '2031-03-01', 'ACTIVE', 'Euro savings', NOW()),
 
-    -- Anin neaktivan racun
+    -- ─── Ana Stojanović (client_id=4) — 1 aktivan + 1 neaktivan + 1 devizni
     ('222000112345678916', 'CHECKING', 'STANDARD', 8, 4, NULL, 4,
      50000.0000, 50000.0000,
      250000.0000, 1000000.0000,
      0.0000, 0.0000,
      255.0000, '2028-01-01', 'INACTIVE', 'Stari račun', NOW()),
 
-    -- Anin aktivan racun
     ('222000112345678917', 'CHECKING', 'YOUTH', 8, 4, NULL, 4,
      72000.0000, 70500.0000,
      150000.0000, 600000.0000,
      1500.0000, 18000.0000,
-     0.0000, '2031-06-01', 'ACTIVE', 'Račun za mlade', NOW())
+     0.0000, '2031-06-01', 'ACTIVE', 'Račun za mlade', NOW()),
+
+    ('222000121345678925', 'FOREIGN', 'PERSONAL', 1, 4, NULL, 4,
+     800.0000, 800.0000,
+     3000.0000, 15000.0000,
+     0.0000, 0.0000,
+     0.0000, '2031-09-01', 'ACTIVE', 'Euro račun', NOW())
 
     ON DUPLICATE KEY UPDATE account_number = account_number;
+
+
+-- ============================================================
+-- BANK ACCOUNTS (Banka kao entitet — racuni u svim valutama)
+-- ============================================================
+-- Banka ima racune u svim 8 valuta za primanje provizija i isplatu kredita.
+-- employee_id=1 (Nikola) kreirao, nema client_id ni company_id (bank internal).
+-- NAPOMENA: Validacija zahteva client XOR company, ali bankini racuni
+-- koriste company_id=NULL i client_id=NULL. Moramo privremeno koristiti
+-- company za ovo ili napraviti izuzetak. Koristimo company_id=2 (Green Food)
+-- kao placeholder jer je to banka u vlasnistvu... Alternativa: kreiramo posebnu
+-- firmu "Banka 2025" kao company.
+
+-- Prvo kreiramo firmu za banku
+INSERT INTO companies (id, name, registration_number, tax_number, activity_code, address,
+                       majority_owner_id, active, created_at)
+VALUES
+    (3, 'Banka 2025 Tim 2', '22200022', '222000222', '64.19',
+     'Bulevar Kralja Aleksandra 73, Beograd',
+     NULL, 1, NOW())
+    ON DUPLICATE KEY UPDATE name = name;
+
+-- Bankini racuni u svim valutama
+INSERT INTO accounts (account_number, account_type, account_subtype, currency_id,
+                      client_id, company_id, employee_id,
+                      balance, available_balance,
+                      daily_limit, monthly_limit,
+                      daily_spending, monthly_spending,
+                      maintenance_fee, expiration_date, status, name, created_at)
+VALUES
+    ('222000100000000110', 'BUSINESS', 'STANDARD', 8, NULL, 3, 1,
+     50000000.0000, 50000000.0000, 999999999.0000, 999999999.0000,
+     0.0000, 0.0000, 0.0000, '2050-01-01', 'ACTIVE', 'Banka RSD', NOW()),
+
+    ('222000100000000120', 'BUSINESS', 'STANDARD', 1, NULL, 3, 1,
+     5000000.0000, 5000000.0000, 999999999.0000, 999999999.0000,
+     0.0000, 0.0000, 0.0000, '2050-01-01', 'ACTIVE', 'Banka EUR', NOW()),
+
+    ('222000100000000130', 'BUSINESS', 'STANDARD', 2, NULL, 3, 1,
+     5000000.0000, 5000000.0000, 999999999.0000, 999999999.0000,
+     0.0000, 0.0000, 0.0000, '2050-01-01', 'ACTIVE', 'Banka CHF', NOW()),
+
+    ('222000100000000140', 'BUSINESS', 'STANDARD', 3, NULL, 3, 1,
+     5000000.0000, 5000000.0000, 999999999.0000, 999999999.0000,
+     0.0000, 0.0000, 0.0000, '2050-01-01', 'ACTIVE', 'Banka USD', NOW()),
+
+    ('222000100000000150', 'BUSINESS', 'STANDARD', 4, NULL, 3, 1,
+     5000000.0000, 5000000.0000, 999999999.0000, 999999999.0000,
+     0.0000, 0.0000, 0.0000, '2050-01-01', 'ACTIVE', 'Banka GBP', NOW()),
+
+    ('222000100000000160', 'BUSINESS', 'STANDARD', 5, NULL, 3, 1,
+     500000000.0000, 500000000.0000, 999999999.0000, 999999999.0000,
+     0.0000, 0.0000, 0.0000, '2050-01-01', 'ACTIVE', 'Banka JPY', NOW()),
+
+    ('222000100000000170', 'BUSINESS', 'STANDARD', 6, NULL, 3, 1,
+     5000000.0000, 5000000.0000, 999999999.0000, 999999999.0000,
+     0.0000, 0.0000, 0.0000, '2050-01-01', 'ACTIVE', 'Banka CAD', NOW()),
+
+    ('222000100000000180', 'BUSINESS', 'STANDARD', 7, NULL, 3, 1,
+     5000000.0000, 5000000.0000, 999999999.0000, 999999999.0000,
+     0.0000, 0.0000, 0.0000, '2050-01-01', 'ACTIVE', 'Banka AUD', NOW())
+
+    ON DUPLICATE KEY UPDATE account_number = account_number;
+
+
+-- ============================================================
+-- CARDS (kartice klijenata)
+-- ============================================================
+-- card_status: ACTIVE, BLOCKED, DEACTIVATED
+-- account_id: koristimo racune iz gornjeg inserta
+-- client_id:  1=Stefan, 2=Milica, 3=Lazar, 4=Ana
+
+INSERT INTO cards (card_number, card_name, cvv, account_id, client_id,
+                   card_limit, status, created_at, expiration_date)
+VALUES
+    -- Stefan: 1 kartica za tekuci RSD (account_id=1)
+    ('4222001234567890', 'Visa Debit', '123', 1, 1,
+     250000.0000, 'ACTIVE', '2026-01-15', '2030-01-15'),
+
+    -- Stefan: 1 kartica za Euro racun (account_id=3)
+    ('4222009876543210', 'Visa Debit', '456', 3, 1,
+     5000.0000, 'ACTIVE', '2026-02-01', '2030-02-01'),
+
+    -- Milica: 1 kartica za tekuci (account_id=4)
+    ('4222005555666677', 'Visa Debit', '789', 4, 2,
+     200000.0000, 'ACTIVE', '2026-01-20', '2030-01-20'),
+
+    -- Milica: 1 kartica za poslovni (account_id=5) — max 1 za business
+    ('4222003333444455', 'Visa Business', '321', 5, 2,
+     1000000.0000, 'ACTIVE', '2026-02-10', '2030-02-10'),
+
+    -- Lazar: 1 kartica za tekuci (account_id=7)
+    ('4222007777888899', 'Visa Debit', '654', 7, 3,
+     250000.0000, 'ACTIVE', '2026-03-01', '2030-03-01'),
+
+    -- Ana: 1 kartica za youth racun (account_id=11), blokirana za testiranje
+    ('4222001111222233', 'Visa Debit', '987', 11, 4,
+     150000.0000, 'BLOCKED', '2026-01-01', '2030-01-01')
+
+    ON DUPLICATE KEY UPDATE card_number = card_number;
+
+
+-- ============================================================
+-- PAYMENT RECIPIENTS (sacuvani primaoci placanja)
+-- ============================================================
+
+INSERT INTO payment_recipients (client_id, name, account_number, created_at)
+SELECT c.id, 'Milica Nikolić', '222000112345678913', NOW()
+FROM clients c WHERE c.email = 'stefan.jovanovic@gmail.com'
+AND NOT EXISTS (
+    SELECT 1 FROM payment_recipients pr WHERE pr.client_id = c.id AND pr.account_number = '222000112345678913'
+);
+
+INSERT INTO payment_recipients (client_id, name, account_number, created_at)
+SELECT c.id, 'Lazar Ilić', '222000112345678915', NOW()
+FROM clients c WHERE c.email = 'stefan.jovanovic@gmail.com'
+AND NOT EXISTS (
+    SELECT 1 FROM payment_recipients pr WHERE pr.client_id = c.id AND pr.account_number = '222000112345678915'
+);
+
+INSERT INTO payment_recipients (client_id, name, account_number, created_at)
+SELECT c.id, 'Stefan Jovanović', '222000112345678911', NOW()
+FROM clients c WHERE c.email = 'milica.nikolic@gmail.com'
+AND NOT EXISTS (
+    SELECT 1 FROM payment_recipients pr WHERE pr.client_id = c.id AND pr.account_number = '222000112345678911'
+);
+
+INSERT INTO payment_recipients (client_id, name, account_number, created_at)
+SELECT c.id, 'Ana Stojanović', '222000112345678917', NOW()
+FROM clients c WHERE c.email = 'lazar.ilic@yahoo.com'
+AND NOT EXISTS (
+    SELECT 1 FROM payment_recipients pr WHERE pr.client_id = c.id AND pr.account_number = '222000112345678917'
+);

@@ -10,24 +10,36 @@ import rs.raf.banka2_bek.auth.dto.MessageResponseDto;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // VALIDATION ERRORS (email, password itd.)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<MessageResponseDto> handleValidationException(MethodArgumentNotValidException ex) {
-
         String message = ex.getBindingResult()
                 .getFieldErrors()
-                .get(0)
-                .getDefaultMessage();
+                .stream()
+                .findFirst()
+                .map(f -> f.getDefaultMessage())
+                .orElse("Validation error");
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(new MessageResponseDto(message));
     }
 
-    // OSTALE GREŠKE (npr dupli email, login error)
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<MessageResponseDto> handleNotFound(IllegalArgumentException ex) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(new MessageResponseDto(ex.getMessage()));
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<MessageResponseDto> handleForbidden(IllegalStateException ex) {
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(new MessageResponseDto(ex.getMessage()));
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<MessageResponseDto> handleRuntimeException(RuntimeException ex) {
-
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(new MessageResponseDto(ex.getMessage()));
