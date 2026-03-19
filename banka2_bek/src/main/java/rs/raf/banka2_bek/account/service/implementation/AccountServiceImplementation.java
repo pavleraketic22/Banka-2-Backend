@@ -17,6 +17,7 @@ import rs.raf.banka2_bek.company.repository.CompanyRepository;
 import rs.raf.banka2_bek.company.dto.CompanyDto;
 import rs.raf.banka2_bek.currency.model.Currency;
 import rs.raf.banka2_bek.currency.repository.CurrencyRepository;
+import rs.raf.banka2_bek.auth.repository.UserRepository;
 import rs.raf.banka2_bek.employee.model.Employee;
 import rs.raf.banka2_bek.employee.repository.EmployeeRepository;
 
@@ -45,6 +46,7 @@ public class AccountServiceImplementation implements AccountService {
     private final CurrencyRepository currencyRepository;
     private final CompanyRepository companyRepository;
     private final EmployeeRepository employeeRepository;
+    private final UserRepository userRepository;
     private final CardService cardService;
 
     public AccountServiceImplementation(AccountRepository accountRepository,
@@ -52,12 +54,14 @@ public class AccountServiceImplementation implements AccountService {
                                          CurrencyRepository currencyRepository,
                                          CompanyRepository companyRepository,
                                          EmployeeRepository employeeRepository,
+                                         UserRepository userRepository,
                                          @Lazy CardService cardService) {
         this.accountRepository = accountRepository;
         this.clientRepository = clientRepository;
         this.currencyRepository = currencyRepository;
         this.companyRepository = companyRepository;
         this.employeeRepository = employeeRepository;
+        this.userRepository = userRepository;
         this.cardService = cardService;
     }
 
@@ -90,8 +94,27 @@ public class AccountServiceImplementation implements AccountService {
             client = clientRepository.findById(request.getClientId())
                     .orElseThrow(() -> new RuntimeException("Klijent sa ID " + request.getClientId() + " nije pronadjen"));
         } else if (request.getOwnerEmail() != null && !request.getOwnerEmail().isBlank()) {
-            client = clientRepository.findByEmail(request.getOwnerEmail())
-                    .orElseThrow(() -> new RuntimeException("Klijent sa emailom '" + request.getOwnerEmail() + "' nije pronadjen"));
+            client = clientRepository.findByEmail(request.getOwnerEmail()).orElse(null);
+            // Ako klijent ne postoji u clients tabeli ali postoji u users (registrovan), kreiraj Client zapis
+            if (client == null) {
+                rs.raf.banka2_bek.auth.model.User user = userRepository.findByEmail(request.getOwnerEmail())
+                        .orElseThrow(() -> new RuntimeException("Korisnik sa emailom '" + request.getOwnerEmail() + "' nije pronadjen"));
+                client = Client.builder()
+                        .firstName(user.getFirstName())
+                        .lastName(user.getLastName())
+                        .email(user.getEmail())
+                        .phone(user.getPhone() != null ? user.getPhone() : "N/A")
+                        .address(user.getAddress())
+                        .gender(user.getGender())
+                        .dateOfBirth(user.getDateOfBirth() != null
+                                ? java.time.Instant.ofEpochMilli(user.getDateOfBirth()).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+                                : LocalDate.of(2000, 1, 1))
+                        .password(user.getPassword())
+                        .saltPassword("auto")
+                        .active(true)
+                        .build();
+                client = clientRepository.save(client);
+            }
         }
 
         // Poslovni racun — FE salje flat polja ILI nested company objekat
