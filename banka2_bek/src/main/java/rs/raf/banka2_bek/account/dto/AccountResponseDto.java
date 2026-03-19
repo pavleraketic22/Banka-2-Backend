@@ -31,6 +31,7 @@ public class AccountResponseDto {
     private BigDecimal reservedFunds;
 
     private String currencyCode;
+    private String currency; // alias za currencyCode — FE koristi ovo polje
 
     // limiti
     private BigDecimal dailyLimit;

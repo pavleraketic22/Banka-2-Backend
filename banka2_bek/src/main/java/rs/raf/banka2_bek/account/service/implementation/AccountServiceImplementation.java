@@ -315,6 +315,7 @@ public class AccountServiceImplementation implements AccountService {
                 .availableBalance(account.getAvailableBalance())
                 .reservedFunds(reservedFunds)
                 .currencyCode(account.getCurrency().getCode())
+                .currency(account.getCurrency().getCode())
                 .dailyLimit(account.getDailyLimit())
                 .monthlyLimit(account.getMonthlyLimit())
                 .expirationDate(account.getExpirationDate())
