@@ -4,11 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 import rs.raf.banka2_bek.stock.dto.ListingDailyPriceDto;
 import rs.raf.banka2_bek.stock.dto.ListingDto;
 import rs.raf.banka2_bek.stock.mapper.ListingMapper;
@@ -19,10 +17,11 @@ import rs.raf.banka2_bek.stock.repository.ListingSpec;
 import rs.raf.banka2_bek.stock.service.ListingService;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
-public class ListingServiceImpl implements ListingService {
+public class   ListingServiceImpl implements ListingService {
 
     private final ListingRepository listingRepository;
     private final ListingDailyPriceInfoRepository dailyPriceRepository;
@@ -33,11 +32,11 @@ public class ListingServiceImpl implements ListingService {
         try {
             listingType = ListingType.valueOf(type.toUpperCase());
         } catch (IllegalArgumentException | NullPointerException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nepoznat tip hartije: " + type);
+            throw new IllegalArgumentException("Nepoznat tip hartije: " + type);
         }
 
         if (listingType == ListingType.FOREX && isClient()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Klijenti nemaju pristup FOREX hartijama.");
+            throw new IllegalStateException("Klijenti nemaju pristup FOREX hartijama.");
         }
 
         var pageable = PageRequest.of(page, size, Sort.by("ticker").ascending());
@@ -50,7 +49,7 @@ public class ListingServiceImpl implements ListingService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null) return false;
         return auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_CLIENT"));
+                .anyMatch(a -> "ROLE_CLIENT".equals(a.getAuthority()));
     }
 
     @Override

@@ -32,6 +32,7 @@ public class GlobalSecurityConfig  {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
+                                "/error",
                                 "/auth/register",
                                 "/auth/login",
                                 "/auth/password_reset/request",
