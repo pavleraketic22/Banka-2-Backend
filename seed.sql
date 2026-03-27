@@ -635,3 +635,62 @@ INSERT INTO actuary_info (employee_id, actuary_type, daily_limit, used_limit, ne
 SELECT e.id, 'AGENT', 50000, 15000, true
 FROM employees e WHERE e.email = 'nemanja.savic@banka.rs'
 AND NOT EXISTS (SELECT 1 FROM actuary_info WHERE employee_id = e.id);
+
+-- ============================================================
+-- PORTFOLIOS (hartije od vrednosti u vlasnistvu korisnika)
+-- ============================================================
+-- Stefan Jovanovic poseduje akcije AAPL, MSFT, TSLA i futures CLM26
+
+-- Stefan drzi 50 AAPL akcija (kupljeno po $145.00)
+INSERT INTO portfolios (user_id, listing_id, listing_ticker, listing_name, listing_type, quantity, average_buy_price, public_quantity, last_modified)
+SELECT u.id, l.id, l.ticker, l.name, 'STOCK', 50, 145.0000, 0, NOW()
+FROM users u, listings l
+WHERE u.email = 'stefan.jovanovic@gmail.com' AND l.ticker = 'AAPL'
+AND NOT EXISTS (
+    SELECT 1 FROM portfolios p WHERE p.user_id = u.id AND p.listing_id = l.id
+);
+
+-- Stefan drzi 30 MSFT akcija (kupljeno po $380.50)
+INSERT INTO portfolios (user_id, listing_id, listing_ticker, listing_name, listing_type, quantity, average_buy_price, public_quantity, last_modified)
+SELECT u.id, l.id, l.ticker, l.name, 'STOCK', 30, 380.5000, 10, NOW()
+FROM users u, listings l
+WHERE u.email = 'stefan.jovanovic@gmail.com' AND l.ticker = 'MSFT'
+AND NOT EXISTS (
+    SELECT 1 FROM portfolios p WHERE p.user_id = u.id AND p.listing_id = l.id
+);
+
+-- Stefan drzi 20 TSLA akcija (kupljeno po $265.00 — u gubitku)
+INSERT INTO portfolios (user_id, listing_id, listing_ticker, listing_name, listing_type, quantity, average_buy_price, public_quantity, last_modified)
+SELECT u.id, l.id, l.ticker, l.name, 'STOCK', 20, 265.0000, 0, NOW()
+FROM users u, listings l
+WHERE u.email = 'stefan.jovanovic@gmail.com' AND l.ticker = 'TSLA'
+AND NOT EXISTS (
+    SELECT 1 FROM portfolios p WHERE p.user_id = u.id AND p.listing_id = l.id
+);
+
+-- Stefan drzi 5 CLM26 futures ugovora (kupljeno po $65.20)
+INSERT INTO portfolios (user_id, listing_id, listing_ticker, listing_name, listing_type, quantity, average_buy_price, public_quantity, last_modified)
+SELECT u.id, l.id, l.ticker, l.name, 'FUTURES', 5, 65.2000, 0, NOW()
+FROM users u, listings l
+WHERE u.email = 'stefan.jovanovic@gmail.com' AND l.ticker = 'CLM26'
+AND NOT EXISTS (
+    SELECT 1 FROM portfolios p WHERE p.user_id = u.id AND p.listing_id = l.id
+);
+
+-- Milica drzi 100 GOOG akcija (kupljeno po $155.00)
+INSERT INTO portfolios (user_id, listing_id, listing_ticker, listing_name, listing_type, quantity, average_buy_price, public_quantity, last_modified)
+SELECT u.id, l.id, l.ticker, l.name, 'STOCK', 100, 155.0000, 25, NOW()
+FROM users u, listings l
+WHERE u.email = 'milica.nikolic@gmail.com' AND l.ticker = 'GOOG'
+AND NOT EXISTS (
+    SELECT 1 FROM portfolios p WHERE p.user_id = u.id AND p.listing_id = l.id
+);
+
+-- Milica drzi 15 AMZN akcija (kupljeno po $172.80)
+INSERT INTO portfolios (user_id, listing_id, listing_ticker, listing_name, listing_type, quantity, average_buy_price, public_quantity, last_modified)
+SELECT u.id, l.id, l.ticker, l.name, 'STOCK', 15, 172.8000, 0, NOW()
+FROM users u, listings l
+WHERE u.email = 'milica.nikolic@gmail.com' AND l.ticker = 'AMZN'
+AND NOT EXISTS (
+    SELECT 1 FROM portfolios p WHERE p.user_id = u.id AND p.listing_id = l.id
+);

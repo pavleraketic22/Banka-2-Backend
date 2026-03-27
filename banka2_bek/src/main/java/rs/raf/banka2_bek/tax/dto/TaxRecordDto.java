@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TaxRecordDto {
+    private Long id;
     private Long userId;
     private String userName;
     private String userType; // CLIENT or EMPLOYEE

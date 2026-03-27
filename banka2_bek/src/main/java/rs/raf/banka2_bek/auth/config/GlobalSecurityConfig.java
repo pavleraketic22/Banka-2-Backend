@@ -71,6 +71,7 @@ public class GlobalSecurityConfig  {
                         .requestMatchers(HttpMethod.GET, "/orders/{id}").authenticated()
                         .requestMatchers("/orders/*/approve", "/orders/*/decline").hasAnyRole("ADMIN")
                         .requestMatchers("/portfolio/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/tax/my").authenticated()
                         .requestMatchers("/tax/**").hasAnyAuthority("ROLE_ADMIN", "ADMIN", "SUPERVISOR")
                         .anyRequest().authenticated()
                 )

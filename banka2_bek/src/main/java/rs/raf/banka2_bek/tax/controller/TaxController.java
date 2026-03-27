@@ -2,40 +2,54 @@ package rs.raf.banka2_bek.tax.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import rs.raf.banka2_bek.tax.dto.TaxRecordDto;
+import rs.raf.banka2_bek.tax.service.TaxService;
 
-import java.util.Collections;
 import java.util.List;
 
-/**
- * Stub controller za porezne endpointe.
- * Frontend (TaxPortalPage) ocekuje ove endpointe — vracamo prazne podatke
- * dok se ne implementira puna logika.
- */
 @RestController
 @RequestMapping("/tax")
 @RequiredArgsConstructor
 public class TaxController {
 
+    private final TaxService taxService;
+
     /**
      * GET /tax - Lista korisnika sa dugovanjima (supervizor portal).
      * Filtriranje po userType i name.
+     * Zahteva ADMIN ili EMPLOYEE ulogu.
      */
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<List<TaxRecordDto>> getTaxRecords(
             @RequestParam(required = false) String userType,
             @RequestParam(required = false) String name) {
-        // Stub: vraca praznu listu dok se ne implementira porezna logika
-        return ResponseEntity.ok(Collections.emptyList());
+        List<TaxRecordDto> records = taxService.getTaxRecords(name, userType);
+        return ResponseEntity.ok(records);
     }
 
     /**
-     * POST /tax/calculate - Pokreni obracun poreza za tekuci mesec.
+     * GET /tax/my - Vraca poreski zapis za autentifikovanog korisnika.
+     * Dostupno svim autentifikovanim korisnicima.
+     */
+    @GetMapping("/my")
+    public ResponseEntity<TaxRecordDto> getMyTaxRecord(Authentication authentication) {
+        String email = authentication.getName();
+        TaxRecordDto record = taxService.getMyTaxRecord(email);
+        return ResponseEntity.ok(record);
+    }
+
+    /**
+     * POST /tax/calculate - Pokreni obracun poreza za sve korisnike.
+     * Zahteva ADMIN ulogu.
      */
     @PostMapping("/calculate")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> triggerCalculation() {
-        // Stub: prihvata zahtev ali nema efekta dok se ne implementira
+        taxService.calculateTaxForAllUsers();
         return ResponseEntity.ok().build();
     }
 }

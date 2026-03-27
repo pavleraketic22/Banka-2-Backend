@@ -5,29 +5,28 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import rs.raf.banka2_bek.portfolio.dto.PortfolioItemDto;
 import rs.raf.banka2_bek.portfolio.dto.PortfolioSummaryDto;
+import rs.raf.banka2_bek.portfolio.service.PortfolioService;
 
-import java.math.BigDecimal;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Stub controller za portfolio endpointe.
- * Frontend ocekuje ove endpointe — vracamo prazne/podrazumevane podatke
- * dok se ne implementira puna logika.
+ * Controller za portfolio endpointe.
+ * Vraca hartije od vrednosti u vlasnistvu korisnika sa trenutnim cenama.
  */
 @RestController
 @RequestMapping("/portfolio")
 @RequiredArgsConstructor
 public class PortfolioController {
 
+    private final PortfolioService portfolioService;
+
     /**
      * GET /portfolio/my - Lista hartija u vlasnistvu korisnika.
      */
     @GetMapping("/my")
     public ResponseEntity<List<PortfolioItemDto>> getMyPortfolio() {
-        // Stub: vraca praznu listu dok se ne implementira portfolio logika
-        return ResponseEntity.ok(Collections.emptyList());
+        return ResponseEntity.ok(portfolioService.getMyPortfolio());
     }
 
     /**
@@ -35,21 +34,17 @@ public class PortfolioController {
      */
     @GetMapping("/summary")
     public ResponseEntity<PortfolioSummaryDto> getSummary() {
-        // Stub: vraca nule dok se ne implementira portfolio logika
-        PortfolioSummaryDto summary = new PortfolioSummaryDto(
-                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO
-        );
-        return ResponseEntity.ok(summary);
+        return ResponseEntity.ok(portfolioService.getSummary());
     }
 
     /**
      * PATCH /portfolio/{id}/public - Postavi broj akcija u javnom rezimu.
      */
     @PatchMapping("/{id}/public")
-    public ResponseEntity<Map<String, String>> setPublicQuantity(
+    public ResponseEntity<PortfolioItemDto> setPublicQuantity(
             @PathVariable Long id,
             @RequestBody Map<String, Integer> body) {
-        // Stub: prihvata zahtev ali nema efekta dok se ne implementira
-        return ResponseEntity.ok(Map.of("message", "Public quantity updated (stub)"));
+        int quantity = body.getOrDefault("quantity", 0);
+        return ResponseEntity.ok(portfolioService.setPublicQuantity(id, quantity));
     }
 }
