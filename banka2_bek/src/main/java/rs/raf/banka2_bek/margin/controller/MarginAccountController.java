@@ -128,7 +128,8 @@ public class MarginAccountController {
     public ResponseEntity<Map<String, String>> withdraw(
             @PathVariable Long id,
             @RequestBody Map<String, BigDecimal> body,
-            Authentication authentication) {
+            Authentication authentication
+    ) {
         BigDecimal amount = body.get("amount");
         marginAccountService.withdraw(id, amount);
         return ResponseEntity.ok(Map.of("message", "Withdrawal successful"));
