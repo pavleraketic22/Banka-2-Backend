@@ -6,10 +6,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import rs.raf.banka2_bek.account.model.Account;
 import rs.raf.banka2_bek.account.model.AccountStatus;
 import rs.raf.banka2_bek.account.repository.AccountRepository;
-import rs.raf.banka2_bek.auth.repository.UserRepository;
 import rs.raf.banka2_bek.client.model.Client;
 import rs.raf.banka2_bek.client.repository.ClientRepository;
 import rs.raf.banka2_bek.margin.dto.CreateMarginAccountDto;
@@ -43,7 +43,8 @@ class MarginAccountServiceTest {
     private AccountRepository accountRepository;
     @Mock
     private ClientRepository clientRepository;
-
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     private MarginAccountService marginAccountService;
 
@@ -53,7 +54,8 @@ class MarginAccountServiceTest {
                 marginAccountRepository,
                 marginTransactionRepository,
                 accountRepository,
-                clientRepository
+                clientRepository,
+                eventPublisher
         );
     }
 
